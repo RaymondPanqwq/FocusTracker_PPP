@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+dist/
+build/
+*.spec
+*.egg-info/
+
+# Flutter
+focus-tracker-flutter/.dart_tool/
+focus-tracker-flutter/.packages
+focus-tracker-flutter/build/
+focus-tracker-flutter/.flutter-plugins
+focus-tracker-flutter/.flutter-plugins-dependencies
+
+# Firebase 密钥（绝对不能上传！）
+serviceAccountKey.json
+google-services.json
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
