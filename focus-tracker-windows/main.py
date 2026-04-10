@@ -1,61 +1,78 @@
-"""
-专注时间追踪器 - Windows 主程序入口
-版本: v0.1（阶段一）
-"""
+# main.py 顶部替换原来的路径处理
 import sys
 import os
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 
-# 确保 data 目录存在
-os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
+def get_base_dir():
+    """
+    兼容直接运行(.py)和打包运行(.exe)两种模式
+    - 打包后: sys._MEIPASS 是临时解压目录（只读资源）
+    - 运行时数据（db等）始终放在 EXE 同级目录
+    """
+    if getattr(sys, 'frozen', False):
+        # 打包后 EXE 所在目录（可写）
+        return os.path.dirname(sys.executable)
+    else:
+        # 开发模式
+        return os.path.dirname(os.path.abspath(__file__))
 
-from config import DB_PATH
+def get_resource_dir():
+    """获取只读资源目录（assets等）"""
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS   # PyInstaller 解压的临时目录
+    return os.path.dirname(os.path.abspath(__file__))
+
+BASE_DIR = get_base_dir()
+RESOURCE_DIR = get_resource_dir()
+
+# data 目录始终在 EXE 同级
+os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
+
+# ⚠️ 在 import config 之前注入路径
+import config
+config.BASE_DIR = BASE_DIR
+config.DB_PATH = os.path.join(BASE_DIR, "data", "focus_tracker.db")
+config.RESOURCE_DIR = RESOURCE_DIR
+
 from core.db import init_db, get_device_id
 from core.tracker import FocusTracker
 from ui.main_window import MainWindow
 from ui.tray_icon import TrayIcon
-
 
 def main():
     print("=" * 50)
     print("  专注时间追踪器 v0.1")
     print("=" * 50)
 
-    # 1. 初始化数据库
     init_db()
     device_id = get_device_id()
     print(f"[Main] 设备ID: {device_id}")
-    print(f"[Main] 数据库: {DB_PATH}")
+    print(f"[Main] 数据库: {config.DB_PATH}")
 
-    # 2. 启动追踪引擎
     tracker = FocusTracker()
     tracker.start()
 
-    # 3. 启动 Qt 应用
     app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)  # 关闭窗口不退出，留在托盘
+    app.setQuitOnLastWindowClosed(False)
 
-    # 4. 创建主窗口
     window = MainWindow(tracker)
     window.show()
 
-    # 5. 创建系统托盘
-    tray = TrayIcon(window, tracker, app)
+    # ⚠️ 图标路径使用资源目录
+    tray = TrayIcon(window, tracker, app,
+                    icon_path=os.path.join(RESOURCE_DIR, "assets", "paimon1.ico"))
     tray.show()
 
-    # 6. 定时更新托盘信息
     tray_timer = QTimer()
     tray_timer.timeout.connect(tray.update_info)
-    tray_timer.start(15000)  # 每 15 秒更新
+    tray_timer.start(15000)
 
     print("[Main] 程序启动完成！")
 
-    # 7. 进入事件循环
     exit_code = app.exec()
     tracker.stop()
     sys.exit(exit_code)
-
 
 if __name__ == "__main__":
     main()

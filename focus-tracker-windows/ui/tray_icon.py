@@ -4,16 +4,16 @@ from PyQt6.QtGui import QIcon, QAction
 from core.db import get_today_total, get_device_id
 
 
-class TrayIcon(QSystemTrayIcon):
-    def __init__(self, main_window, tracker, app):
-        super().__init__()
+class TrayIcon(QSystemTrayIcon):  
+    def __init__(self, main_window, tracker, app, icon_path="assets/paimon1.ico"):  
+        super().__init__()  
         self.main_window = main_window
         self.tracker = tracker
         self.app = app
         self.device_id = get_device_id()
 
         # 设置图标
-        self.setIcon(QIcon("assets/icon.png"))
+        self.setIcon(QIcon(icon_path))  # 使用传入路径  
         self.setToolTip("专注时间追踪器")
 
         # 创建右键菜单
